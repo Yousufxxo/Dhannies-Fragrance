@@ -208,7 +208,7 @@ let loggedIn = false,
 function adminLogin() {
   const e = document.getElementById("a-email").value,
     p = document.getElementById("a-pass").value;
-  if (e === "admin@dhannies.com" && p === "luxe2026") {
+  if (e === "dhannie" && p === "dhannie123") {
     loggedIn = true;
     document.getElementById("admin-login").style.display = "none";
     document.getElementById("admin-dashboard").style.display = "block";
