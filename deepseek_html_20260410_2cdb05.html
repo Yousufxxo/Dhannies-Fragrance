@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Dhannie's Fragrance | Luxury Perfumes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div id="toast"></div>
+<div class="overlay" id="main-overlay" onclick="closeAll()"></div>
+
+<!-- Header -->
+<header class="navbar">
+    <div class="logo" onclick="showPage('home')">Dhannie's<span>✦</span></div>
+    <nav class="desktop-nav">
+        <a onclick="showPage('home')">HOME</a>
+        <a onclick="showPage('shop')">SHOP</a>
+        <a onclick="showPage('about')">ABOUT</a>
+        <a onclick="showPage('contact')">CONTACT</a>
+        <a onclick="showPage('admin')">ADMIN</a>
+    </nav>
+    <div class="search-wrap">
+        <input type="text" id="search-input" placeholder="Search fragrances..." autocomplete="off" oninput="handleSearch(this.value)">
+        <button class="mic-btn" onclick="startVoice()"><i class="fas fa-microphone"></i></button>
+        <ul class="autocomplete-list hidden" id="ac-list"></ul>
+    </div>
+    <div class="header-icons">
+        <button class="icon-btn" onclick="openWishDrawer()"><i class="far fa-heart"></i></button>
+    </div>
+    <div class="hamburger" onclick="toggleMobileMenu()">
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
+    </div>
+</header>
+
+<div class="nav-links" id="mobile-nav">
+    <a onclick="showPage('home');closeMobileMenu()">HOME</a>
+    <a onclick="showPage('shop');closeMobileMenu()">SHOP</a>
+    <a onclick="showPage('about');closeMobileMenu()">ABOUT</a>
+    <a onclick="showPage('contact');closeMobileMenu()">CONTACT</a>
+    <a onclick="showPage('admin');closeMobileMenu()">ADMIN</a>
+</div>
+
+<!-- HOME PAGE -->
+<div id="home-section" class="page-section active">
+    <section class="hero">
+        <picture>
+            <!-- <source media="(max-width: 768px)" srcset="https://images.pexels.com/photos/7083921/pexels-photo-7083921.jpeg?auto=compress&cs=tinysrgb&w=800&h=1200&fit=crop"> -->
+            <!-- <source media="(min-width: 769px)" srcset="https://images.pexels.com/photos/7083921/pexels-photo-7083921.jpeg?auto=compress&cs=tinysrgb&w=1600"> -->
+            <img class="hero-bg-img" src="img/871a742b-75da-4dd5-a10a-80d550d1c043_selling_point_0_155b7129.webp" alt="Luxury perfume" loading="lazy">
+        </picture>
+        <div class="hero-content">
+            <h1>Wear Your Signature</h1>
+            <p>Discover luxury fragrances crafted for those who appreciate the finer things.</p>
+            <div class="hero-actions">
+                <button class="btn-primary" onclick="showPage('shop')">Shop Now</button>
+                <a class="btn-wa" id="hero-wa-btn" href="#" target="_blank"><i class="fab fa-whatsapp"></i> Order on WhatsApp</a>
+            </div>
+        </div>
+    </section>
+
+    <div class="section-container">
+        <div class="section-header">
+            <p class="section-eyebrow">Our Collection</p>
+            <h2 class="section-title">Signature Fragrances</h2>
+            <p class="section-subtitle">Each bottle tells a story. Find yours.</p>
+        </div>
+        
+        <div class="filter-outer">
+            <div class="filter-row">
+                <button class="filter-chip active" data-f="gender" data-v="all">All</button>
+                <button class="filter-chip" data-f="gender" data-v="men">Men</button>
+                <button class="filter-chip" data-f="gender" data-v="women">Women</button>
+                <button class="filter-chip" data-f="gender" data-v="unisex">Unisex</button>
+            </div>
+            <div class="filter-row" style="margin-top: 12px;">
+                <button class="filter-chip active" data-f="scent" data-v="all">All Scents</button>
+                <button class="filter-chip" data-f="scent" data-v="floral">Floral</button>
+                <button class="filter-chip" data-f="scent" data-v="woody">Woody</button>
+                <button class="filter-chip" data-f="scent" data-v="fresh">Fresh</button>
+                <button class="filter-chip" data-f="scent" data-v="oriental">Oriental</button>
+            </div>
+        </div>
+        
+        <div class="price-row">
+    <label>Minimum price:</label>
+    <input type="range" min="0" max="80000" step="5000" value="0" oninput="updatePrice(this.value)">
+    <span class="price-val" id="price-disp">₦0+</span>
+</div>
+        
+        <div class="product-grid" id="home-grid"></div>
+    </div>
+
+    <div class="quiz-section">
+        <div class="section-header">
+            <p class="section-eyebrow">AI Scent Advisor</p>
+            <h2 class="section-title">Find Your Perfect Match</h2>
+        </div>
+        <div id="quiz-s1">
+            <p class="quiz-q">What mood are you chasing?</p>
+            <div class="quiz-opts">
+                <button class="quiz-opt" data-q1="confident">Bold & Confident</button>
+                <button class="quiz-opt" data-q1="romantic">Romantic & Soft</button>
+                <button class="quiz-opt" data-q1="fresh">Fresh & Energetic</button>
+                <button class="quiz-opt" data-q1="mysterious">Dark & Mysterious</button>
+            </div>
+        </div>
+        <div id="quiz-s2" style="display:none">
+            <p class="quiz-q">When do you wear it most?</p>
+            <div class="quiz-opts">
+                <button class="quiz-opt" data-q2="day">Daytime / Work</button>
+                <button class="quiz-opt" data-q2="night">Evening / Date</button>
+                <button class="quiz-opt" data-q2="weekend">Weekend / Leisure</button>
+            </div>
+        </div>
+        <div class="quiz-result" id="quiz-result"></div>
+        <button class="btn-outline" id="quiz-reset" style="display:none; margin-top: 20px;" onclick="resetQuiz()">Retake Quiz</button>
+    </div>
+</div>
+
+<!-- SHOP PAGE -->
+<div id="shop-section" class="page-section">
+    <div class="section-container">
+        <div class="section-header">
+            <p class="section-eyebrow">All Fragrances</p>
+            <h2 class="section-title">The Full Collection</h2>
+        </div>
+        <div class="product-grid" id="shop-grid"></div>
+    </div>
+</div>
+
+<!-- ABOUT PAGE -->
+<div id="about-section" class="page-section">
+    <div class="section-container">
+        <div class="section-header">
+            <p class="section-eyebrow">Our Story</p>
+            <h2 class="section-title">Born from Passion,<br>Crafted with Purpose</h2>
+            <p class="section-subtitle">Dhannies Fragrance was founded with one belief: everyone deserves to wear a luxury scent that feels personal.</p>
+        </div>
+        <div class="about-grid">
+            <div class="about-card">
+                <i class="fas fa-flask"></i>
+                <h3>Our Craft</h3>
+                <p>Every fragrance is carefully curated from the finest ingredients houses in France, the Middle East, and West Africa.</p>
+            </div>
+            <div class="about-card">
+                <i class="fas fa-leaf"></i>
+                <h3>Sustainability</h3>
+                <p>Refillable bottles, biodegradable packaging, and responsibly sourced ingredients.</p>
+            </div>
+            <div class="about-card">
+                <i class="fas fa-heart"></i>
+                <h3>Community First</h3>
+                <p>Every customer is a member of the Dhannies family. We're built on trust and quality.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CONTACT PAGE -->
+<div id="contact-section" class="page-section">
+    <div class="section-container">
+        <div class="section-header">
+            <p class="section-eyebrow">Reach Out</p>
+            <h2 class="section-title">Let's Talk Fragrance</h2>
+            <p class="section-subtitle">Order on WhatsApp or connect with us on social media</p>
+        </div>
+        <div class="contact-links">
+            <a class="btn-wa" id="contact-wa-btn" href="#" target="_blank" style="padding: 14px 32px;"><i class="fab fa-whatsapp"></i> WhatsApp Us</a>
+            <a class="btn-outline" href="#"><i class="fab fa-instagram"></i> Instagram</a>
+            <a class="btn-outline" href="#"><i class="fab fa-tiktok"></i> TikTok</a>
+            <a class="btn-outline" href="#"><i class="fab fa-facebook"></i> Facebook</a>
+        </div>
+    </div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div id="admin-section" class="page-section">
+    <div id="admin-login">
+        <div class="login-box">
+            <h2 style="text-align: center; margin-bottom: 24px; font-weight: 600;">Admin Portal</h2>
+            <input type="email" id="a-email" placeholder="admin@dhannies.com" value="admin@dhannies.com" style="margin-bottom: 16px;">
+            <input type="password" id="a-pass" placeholder="Password" value="luxe2026" style="margin-bottom: 20px;">
+            <button class="btn-primary" style="width: 100%;" onclick="adminLogin()">Sign In</button>
+            <p style="text-align: center; font-size: 0.7rem; margin-top: 20px; color: var(--gray-mid);">Demo: admin@dhannies.com / luxe2026</p>
+        </div>
+    </div>
+    <div id="admin-dashboard" style="display: none;">
+        <div class="admin-bar">
+            <span class="logo" style="font-size: 1.2rem;">Dhannie's Admin</span>
+            <button class="btn-outline" onclick="adminLogout()" style="padding: 8px 20px;">Logout</button>
+        </div>
+        <div class="admin-content">
+            <div class="admin-stats" id="admin-stats"></div>
+            <div class="wa-config-card">
+                <i class="fab fa-whatsapp" style="color: #25D366; margin-right: 10px;"></i>
+                <strong>WhatsApp Business Number</strong>
+                <div style="margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap;">
+                    <input type="tel" id="wa-number-input" placeholder="+2348012345678" style="width: 250px;">
+                    <button class="btn-primary" onclick="saveWaNumber()" style="padding: 10px 24px;">Save</button>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h3 style="font-weight: 600;">Products</h3>
+                <button class="btn-primary" onclick="openForm()">+ Add Product</button>
+            </div>
+            <div class="admin-table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Image</th><th>Name</th><th>Price</th><th>Stock</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="admin-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- WISHLIST DRAWER -->
+<div id="wish-drawer">
+    <div class="drawer-hdr">
+        <h2 class="drawer-title"><i class="far fa-heart"></i> Wishlist</h2>
+        <button class="icon-btn" onclick="closeWishDrawer()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="drawer-body" id="wish-body"></div>
+</div>
+
+<!-- QUICK VIEW MODAL -->
+<div id="modal-overlay" onclick="if(event.target===this) closeQV()">
+    <div id="qv-modal">
+        <div class="modal-hdr">
+            <h2 id="m-name" style="font-weight: 600;"></h2>
+            <button class="icon-btn" onclick="closeQV()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <img class="modal-img" id="m-img" style="display: none;">
+            <div id="m-placeholder" style="width: 100%; aspect-ratio: 1/1; background: var(--dark-gray); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 3rem; margin-bottom: 20px;"></div>
+            <p class="card-price" id="m-price" style="font-size: 1.3rem;"></p>
+            <div class="vibe-box" id="m-vibe"></div>
+            <p style="font-size: 0.7rem; color: var(--gray-mid); margin-bottom: 6px;">TOP NOTES</p>
+            <div class="notes-row" id="m-top"></div>
+            <p style="font-size: 0.7rem; color: var(--gray-mid); margin-bottom: 6px;">HEART NOTES</p>
+            <div class="notes-row" id="m-heart"></div>
+            <p style="font-size: 0.7rem; color: var(--gray-mid); margin-bottom: 6px;">BASE NOTES</p>
+            <div class="notes-row" id="m-base"></div>
+            <div class="size-opts" id="m-sizes"></div>
+            <div id="m-actions"></div>
+        </div>
+    </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav id="bottom-nav">
+    <button class="nav-item active" onclick="showPage('home')"><i class="fas fa-home"></i><span>Home</span></button>
+    <button class="nav-item" onclick="showPage('shop')"><i class="fas fa-shopping-bag"></i><span>Shop</span></button>
+    <button class="nav-item" onclick="showPage('about')"><i class="fas fa-info-circle"></i><span>About</span></button>
+    <button class="nav-item" onclick="showPage('contact')"><i class="fas fa-phone"></i><span>Contact</span></button>
+    <button class="nav-item" onclick="openWishDrawer()"><i class="far fa-heart"></i><span>Saved</span></button>
+</nav>
+
+<footer>
+    <p>© 2026 Dhannie's Fragrance. All rights reserved. | developed by <a href="https://intagram.com/yousuf_xxo" target="_blank">xxo</a></p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
