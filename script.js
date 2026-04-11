@@ -313,13 +313,76 @@ function getWaNum() {
   return localStorage.getItem('dhannies_wa') || '+2349138072441';
 }
 
-function saveWaNumber() {
-  const input = document.getElementById('wa-number-input');
-  const num   = input ? input.value.trim() : '';
-  if (!num) { showToast('Enter a WhatsApp number'); return; }
-  localStorage.setItem('dhannies_wa', num);
-  updateWaLinks();
-  showToast('WhatsApp number saved ✦');
+// ADD THIS NEW FUNCTION (find saveWaNumber() and replace it)
+async function saveWaNumber() {
+    const waInput = document.getElementById('wa-number-input');
+    const waNum = waInput.value.trim();
+    
+    if (!waNum) {
+        showToast('Please enter a valid WhatsApp number');
+        return;
+    }
+    
+    try {
+        // Save to localStorage (fallback)
+        localStorage.setItem('wa_number', waNum);
+        
+        // IMPORTANT: Save to Supabase
+        if (supabaseClient) {
+            const { error } = await supabaseClient
+                .from('config')  // Create this table in Supabase
+                .upsert(
+                    { key: 'wa_number', value: waNum },
+                    { onConflict: 'key' }
+                );
+            
+            if (error) {
+                console.error('Supabase save error:', error);
+                showToast('Saved locally only. Check Supabase connection.');
+            } else {
+                showToast('✓ WhatsApp number saved to database!');
+            }
+        } else {
+            showToast('Database not connected. Saved locally only.');
+        }
+        
+        waInput.value = '';
+    } catch (err) {
+        console.error('Save error:', err);
+        showToast('❌ Error saving number');
+    }
+}
+
+// ADD THIS FUNCTION to load from Supabase on page load
+async function loadWaNumber() {
+    if (supabaseClient) {
+        try {
+            const { data, error } = await supabaseClient
+                .from('config')
+                .select('value')
+                .eq('key', 'wa_number')
+                .single();
+            
+            if (data?.value) {
+                localStorage.setItem('wa_number', data.value);
+                return data.value;
+            }
+        } catch (err) {
+            console.log('Loading from Supabase...');
+        }
+    }
+    
+    // Fallback to localStorage
+    return localStorage.getItem('wa_number') || '';
+}
+
+// CALL THIS on admin dashboard load
+async function initAdminDashboard() {
+    // ...existing code...
+    const waNum = await loadWaNumber();
+    if (waNum) {
+        document.getElementById('wa-number-input').value = waNum;
+    }
 }
 
 function updateWaLinks() {
@@ -1024,6 +1087,7 @@ function showPage(page) {
     } else {
       document.getElementById('admin-login').style.display     = 'none';
       document.getElementById('admin-dashboard').style.display = 'block';
+      initAdminDashboard();  // ← ADD THIS LINE
       renderAdminStats();
       renderAdminTable();
     }
