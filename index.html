@@ -9,12 +9,19 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="icon" type="image/png" href="img/LOADER.PNG" />
 
-    <!-- ✅ SUPABASE SDK — must be before script.js -->
+    <!--
+      IMPORTANT: This CDN script MUST come before script.js.
+      It exposes window.supabase = { createClient, ... } as a global.
+      script.js calls window.supabase.createClient() directly — no ES module imports needed.
+    -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
+<!-- Toast notification -->
 <div id="toast"></div>
+
+<!-- Backdrop overlay (closes drawers/modals on click) -->
 <div class="overlay" id="main-overlay" onclick="closeAll()"></div>
 
 <!-- ============================================================
@@ -24,7 +31,7 @@
     <div class="loader-inner">
         <div class="loader-logo">Dhannie's<span>✦</span></div>
         <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
-        <p class="loader-text" id="loader-text">Loading collection...</p>
+        <p class="loader-text" id="loader-text">Connecting to database...</p>
     </div>
 </div>
 
@@ -33,6 +40,7 @@
      ============================================================ -->
 <header class="navbar">
     <div class="logo" onclick="showPage('home')">Dhannie's<span>✦</span></div>
+
     <nav class="desktop-nav">
         <a onclick="showPage('home')">HOME</a>
         <a onclick="showPage('shop')">SHOP</a>
@@ -40,19 +48,30 @@
         <a onclick="showPage('contact')">CONTACT</a>
         <a onclick="showPage('admin')">ADMIN</a>
     </nav>
-    <div class="search-wrap">
-        <input type="text" id="search-input" placeholder="Search fragrances..." autocomplete="off" oninput="handleSearch(this.value)">
-        <button class="mic-btn" onclick="startVoice()"><i class="fas fa-microphone"></i></button>
+
+    <div class="search-wrap" id="search-wrap">
+        <input type="text" id="search-input" placeholder="Search fragrances..."
+               autocomplete="off" oninput="handleSearch(this.value)">
+        <button class="mic-btn" onclick="startVoice()" title="Voice search">
+            <i class="fas fa-microphone"></i>
+        </button>
         <ul class="autocomplete-list hidden" id="ac-list"></ul>
     </div>
+
     <div class="header-icons">
-        <button class="icon-btn" onclick="openWishDrawer()"><i class="far fa-heart"></i></button>
+        <button class="icon-btn" onclick="openWishDrawer()" title="Wishlist">
+            <i class="far fa-heart"></i>
+        </button>
     </div>
+
     <div class="hamburger" onclick="toggleMobileMenu()">
-        <div class="line"></div><div class="line"></div><div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
     </div>
 </header>
 
+<!-- Mobile slide-in nav -->
 <div class="nav-links" id="mobile-nav">
     <a onclick="showPage('home');closeMobileMenu()">HOME</a>
     <a onclick="showPage('shop');closeMobileMenu()">SHOP</a>
@@ -65,24 +84,33 @@
      HOME PAGE
      ============================================================ -->
 <div id="home-section" class="page-section active">
+
+    <!-- Hero -->
     <section class="hero">
-        <img class="hero-bg-img" src="img/871a742b-75da-4dd5-a10a-80d550d1c043_selling_point_0_155b7129.webp" alt="Luxury perfume" loading="lazy">
+        <img class="hero-bg-img"
+             src="img/871a742b-75da-4dd5-a10a-80d550d1c043_selling_point_0_155b7129.webp"
+             alt="Luxury perfume" loading="lazy">
         <div class="hero-content">
             <h1>Wear Your Signature</h1>
             <p>Discover luxury fragrances crafted for those who appreciate the finer things.</p>
             <div class="hero-actions">
                 <button class="btn-primary" onclick="showPage('shop')">Shop Now</button>
-                <a class="btn-wa" id="hero-wa-btn" href="#" target="_blank"><i class="fab fa-whatsapp"></i> Order on WhatsApp</a>
+                <a class="btn-wa" id="hero-wa-btn" href="#" target="_blank" rel="noopener">
+                    <i class="fab fa-whatsapp"></i> Order on WhatsApp
+                </a>
             </div>
         </div>
     </section>
 
+    <!-- Collection -->
     <div class="section-container">
         <div class="section-header">
             <p class="section-eyebrow">Our Collection</p>
             <h2 class="section-title">Signature Fragrances</h2>
             <p class="section-subtitle">Each bottle tells a story. Find yours.</p>
         </div>
+
+        <!-- Filters: Gender -->
         <div class="filter-outer">
             <div class="filter-row">
                 <button class="filter-chip active" data-f="gender" data-v="all">All</button>
@@ -90,6 +118,7 @@
                 <button class="filter-chip" data-f="gender" data-v="women">Women</button>
                 <button class="filter-chip" data-f="gender" data-v="unisex">Unisex</button>
             </div>
+            <!-- Filters: Scent -->
             <div class="filter-row" style="margin-top:12px">
                 <button class="filter-chip active" data-f="scent" data-v="all">All Scents</button>
                 <button class="filter-chip" data-f="scent" data-v="floral">Floral</button>
@@ -98,31 +127,39 @@
                 <button class="filter-chip" data-f="scent" data-v="oriental">Oriental</button>
             </div>
         </div>
+
+        <!-- Price filter -->
         <div class="price-row">
             <label>Min price:</label>
-            <input type="range" min="0" max="80000" step="5000" value="0" oninput="updatePrice(this.value)">
+            <input type="range" min="0" max="80000" step="5000" value="0"
+                   oninput="updatePrice(this.value)">
             <span class="price-val" id="price-disp">₦0+</span>
         </div>
+
+        <!-- Skeleton loader (shown while fetching) -->
         <div class="skeleton-grid" id="home-skeleton">
-            <div class="skeleton-card"></div><div class="skeleton-card"></div>
-            <div class="skeleton-card"></div><div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
         </div>
+
         <div class="product-grid" id="home-grid"></div>
     </div>
 
-    <!-- Quiz -->
+    <!-- AI Scent Quiz -->
     <div class="quiz-section">
         <div class="section-header">
             <h2 class="section-title">Confused? Let AI Pick Your Scent 🤔</h2>
-            <p class="section-eyebrow">Answer a few quick questions</p>
+            <p class="section-eyebrow">Answer a couple of quick questions</p>
         </div>
         <div id="quiz-s1">
             <p class="quiz-q">What mood are you chasing?</p>
             <div class="quiz-opts">
-                <button class="quiz-opt" data-q1="confident">Bold & Confident</button>
-                <button class="quiz-opt" data-q1="romantic">Romantic & Soft</button>
-                <button class="quiz-opt" data-q1="fresh">Fresh & Energetic</button>
-                <button class="quiz-opt" data-q1="mysterious">Dark & Mysterious</button>
+                <button class="quiz-opt" data-q1="confident">Bold &amp; Confident</button>
+                <button class="quiz-opt" data-q1="romantic">Romantic &amp; Soft</button>
+                <button class="quiz-opt" data-q1="fresh">Fresh &amp; Energetic</button>
+                <button class="quiz-opt" data-q1="mysterious">Dark &amp; Mysterious</button>
             </div>
         </div>
         <div id="quiz-s2" style="display:none">
@@ -134,9 +171,11 @@
             </div>
         </div>
         <div class="quiz-result" id="quiz-result"></div>
-        <button class="btn-outline" id="quiz-reset" style="display:none;margin-top:20px" onclick="resetQuiz()">Retake Quiz</button>
+        <button class="btn-outline" id="quiz-reset" style="display:none;margin-top:20px"
+                onclick="resetQuiz()">Retake Quiz</button>
     </div>
-</div>
+
+</div><!-- /home-section -->
 
 <!-- ============================================================
      SHOP PAGE
@@ -148,8 +187,10 @@
             <h2 class="section-title">The Full Collection</h2>
         </div>
         <div class="skeleton-grid" id="shop-skeleton">
-            <div class="skeleton-card"></div><div class="skeleton-card"></div>
-            <div class="skeleton-card"></div><div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
         </div>
         <div class="product-grid" id="shop-grid"></div>
     </div>
@@ -166,15 +207,42 @@
             <p class="section-subtitle">Dhannies Fragrance was founded with one belief: everyone deserves to wear a luxury scent that feels personal.</p>
         </div>
         <div class="about-grid">
-            <div class="about-card"><i class="fas fa-flask"></i><h3>Our Craft</h3><p>Every fragrance is carefully curated from the finest ingredient houses in France, the Middle East, and West Africa.</p></div>
-            <div class="about-card"><i class="fas fa-leaf"></i><h3>Sustainability</h3><p>Refillable bottles, biodegradable packaging, and responsibly sourced ingredients — beauty shouldn't cost the earth.</p></div>
-            <div class="about-card"><i class="fas fa-heart"></i><h3>Community First</h3><p>Every customer is a member of the Dhannies family. Built on trust, community, and quality.</p></div>
-            <div class="about-card"><i class="fas fa-shipping-fast"></i><h3>Nationwide Delivery</h3><p>We ship to all 36 states in Nigeria. Same-day delivery in Abuja FCT. Order on WhatsApp for fastest service.</p></div>
+            <div class="about-card">
+                <i class="fas fa-flask"></i>
+                <h3>Our Craft</h3>
+                <p>Every fragrance is curated from the finest ingredient houses in France, the Middle East, and West Africa.</p>
+            </div>
+            <div class="about-card">
+                <i class="fas fa-leaf"></i>
+                <h3>Sustainability</h3>
+                <p>Refillable bottles, biodegradable packaging, and responsibly sourced ingredients — beauty shouldn't cost the earth.</p>
+            </div>
+            <div class="about-card">
+                <i class="fas fa-heart"></i>
+                <h3>Community First</h3>
+                <p>Every customer is a member of the Dhannies family. Built on trust, quality, and genuine care.</p>
+            </div>
+            <div class="about-card">
+                <i class="fas fa-shipping-fast"></i>
+                <h3>Nationwide Delivery</h3>
+                <p>We ship to all 36 states in Nigeria. Same-day delivery in Abuja FCT. Order on WhatsApp for the fastest service.</p>
+            </div>
         </div>
+
+        <!-- Stats bar -->
         <div class="about-stats">
-            <div class="stat-item"><span class="stat-big">500+</span><span class="stat-lbl">Happy Clients</span></div>
-            <div class="stat-item"><span class="stat-big red">30+</span><span class="stat-lbl">Unique Scents</span></div>
-            <div class="stat-item"><span class="stat-big green">100%</span><span class="stat-lbl">Authentic</span></div>
+            <div class="stat-item">
+                <span class="stat-big">500+</span>
+                <span class="stat-lbl">Happy Clients</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-big red">30+</span>
+                <span class="stat-lbl">Unique Scents</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-big green">100%</span>
+                <span class="stat-lbl">Authentic</span>
+            </div>
         </div>
     </div>
 </div>
@@ -187,46 +255,61 @@
         <div class="section-header">
             <p class="section-eyebrow">Reach Out</p>
             <h2 class="section-title">Let's Talk Fragrance</h2>
-            <p class="section-subtitle">Order on WhatsApp, DM us, or send a message below</p>
+            <p class="section-subtitle">Order on WhatsApp, DM us, or drop us a message below</p>
         </div>
         <div class="contact-grid">
+
+            <!-- Contact form -->
             <div class="contact-form-wrap">
                 <h3 style="margin-bottom:20px;font-weight:600">Send a Message</h3>
-                <input type="text" placeholder="Your name" style="margin-bottom:12px">
-                <input type="email" placeholder="Email address" style="margin-bottom:12px">
-                <select style="margin-bottom:12px"><option>Order Enquiry</option><option>Product Question</option><option>Wholesale / Bulk</option><option>Collaboration</option></select>
+                <input type="text"  placeholder="Your name"        style="margin-bottom:12px">
+                <input type="email" placeholder="Email address"    style="margin-bottom:12px">
+                <select style="margin-bottom:12px">
+                    <option>Order Enquiry</option>
+                    <option>Product Question</option>
+                    <option>Wholesale / Bulk</option>
+                    <option>Collaboration</option>
+                </select>
                 <textarea placeholder="Your message..." style="min-height:100px;resize:vertical;margin-bottom:16px"></textarea>
-                <button class="btn-primary" style="width:100%" onclick="showToast('Message sent! We\'ll reply within 24hrs ✦')">Send Message</button>
+                <button class="btn-primary" style="width:100%"
+                        onclick="showToast('Message sent! We\'ll reply within 24 hrs ✦')">
+                    Send Message
+                </button>
             </div>
+
+            <!-- Social links -->
             <div class="contact-socials-wrap">
                 <h3 style="margin-bottom:20px;font-weight:600">Find Us Online</h3>
                 <div class="social-grid">
-                    <a class="social-card" id="contact-wa-btn" href="#" target="_blank">
+                    <a class="social-card" id="contact-wa-btn" href="#" target="_blank" rel="noopener">
                         <div class="s-icon" style="background:#25D366"><i class="fab fa-whatsapp"></i></div>
-                        <div><div class="s-name">WhatsApp</div><div class="s-handle">Chat & Order</div></div>
+                        <div><div class="s-name">WhatsApp</div><div class="s-handle">Chat &amp; Order</div></div>
                     </a>
-                    <a class="social-card" href="https://instagram.com/dhannies_fragrance" target="_blank">
+                    <a class="social-card" href="https://instagram.com/dhannies_fragrance" target="_blank" rel="noopener">
                         <div class="s-icon s-ig"><i class="fab fa-instagram"></i></div>
                         <div><div class="s-name">Instagram</div><div class="s-handle">@dhannies_fragrance</div></div>
                     </a>
-                    <a class="social-card" href="https://tiktok.com/@dhannies_fragrance" target="_blank">
+                    <a class="social-card" href="https://tiktok.com/@dhannies_fragrance" target="_blank" rel="noopener">
                         <div class="s-icon s-tk"><i class="fab fa-tiktok"></i></div>
                         <div><div class="s-name">TikTok</div><div class="s-handle">@dhannies_fragrance</div></div>
                     </a>
-                    <a class="social-card" href="https://facebook.com/dhannies.fragrance" target="_blank">
+                    <a class="social-card" href="https://facebook.com/dhannies.fragrance" target="_blank" rel="noopener">
                         <div class="s-icon s-fb"><i class="fab fa-facebook"></i></div>
                         <div><div class="s-name">Facebook</div><div class="s-handle">Dhannies Fragrance</div></div>
                     </a>
                     <a class="social-card" href="tel:+2349138072441">
-                        <div class="s-icon" style="background:var(--gold)"><i class="fas fa-phone" style="color:#000"></i></div>
+                        <div class="s-icon" style="background:var(--gold)">
+                            <i class="fas fa-phone" style="color:#000"></i>
+                        </div>
                         <div><div class="s-name">Phone / Call</div><div class="s-handle">+234 913 807 2441</div></div>
                     </a>
-                    <a class="social-card" href="https://youtube.com/@dhannies_fragrance" target="_blank">
+                    <a class="social-card" href="https://youtube.com/@dhannies_fragrance" target="_blank" rel="noopener">
                         <div class="s-icon s-yt"><i class="fab fa-youtube"></i></div>
                         <div><div class="s-name">YouTube</div><div class="s-handle">Dhannies Fragrance</div></div>
                     </a>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
@@ -236,97 +319,124 @@
      ============================================================ -->
 <div id="admin-section" class="page-section">
 
-    <!-- LOGIN -->
+    <!-- LOGIN (shown when not logged in) -->
     <div id="admin-login">
         <div class="login-box">
             <div class="login-logo">Dhannie's<span>✦</span></div>
-            <p style="text-align:center;color:var(--gray-mid);font-size:0.8rem;margin-bottom:24px">Admin Control Panel</p>
+            <p style="text-align:center;color:var(--gray-mid);font-size:.82rem;margin-bottom:28px">
+                Admin Control Panel
+            </p>
 
-            <!-- Supabase one-time setup -->
-            <div id="sb-config-box" class="sb-setup-box">
-                <p class="sb-setup-title"><i class="fas fa-database"></i> Database Setup <span class="sb-badge" id="sb-badge">Not Connected</span></p>
-                <input type="text" id="sb-url" placeholder="Supabase Project URL" style="margin-bottom:8px;font-size:0.82rem">
-                <input type="text" id="sb-key" placeholder="Supabase Anon Key (public)" style="margin-bottom:10px;font-size:0.82rem">
-                <button class="btn-outline" style="width:100%;padding:10px;font-size:0.8rem" onclick="saveSupabaseConfig()">
-                    <i class="fas fa-plug"></i> Connect Database
-                </button>
-                <p class="sb-help-text">Get from <strong style="color:var(--gold)">supabase.com</strong> → Project → Settings → API</p>
-            </div>
+            <input type="text"     id="a-email" placeholder="Username"
+                   style="margin-bottom:12px">
+            <input type="password" id="a-pass"  placeholder="Password"
+                   style="margin-bottom:8px"
+                   onkeydown="if(event.key==='Enter') adminLogin()">
 
-            <div class="login-divider"></div>
+            <!-- Error message (hidden by default) -->
+            <p class="login-error hidden" id="login-error">
+                <i class="fas fa-exclamation-circle"></i> Invalid username or password
+            </p>
 
-            <input type="text" id="a-email" placeholder="Username" style="margin-bottom:12px">
-            <input type="password" id="a-pass" placeholder="Password" style="margin-bottom:20px" onkeydown="if(event.key==='Enter')adminLogin()">
-            <p class="login-error hidden" id="login-error"><i class="fas fa-exclamation-circle"></i> Invalid credentials</p>
-            <button class="btn-primary" style="width:100%" onclick="adminLogin()">Sign In</button>
-            <p style="text-align:center;font-size:0.7rem;margin-top:16px;color:var(--gray-mid)">
-                Reset: <a href="https://www.instagram.com/yousuf_xxo/" target="_blank" style="color:var(--gold)">contact xxo</a>
+            <button class="btn-primary" style="width:100%;margin-top:16px"
+                    onclick="adminLogin()">Sign In</button>
+
+            <p style="text-align:center;font-size:.7rem;margin-top:18px;color:var(--gray-mid)">
+                Reset access:
+                <a href="https://www.instagram.com/yousuf_xxo/" target="_blank"
+                   style="color:var(--gold)">contact xxo</a>
             </p>
         </div>
     </div>
 
-    <!-- DASHBOARD -->
+    <!-- DASHBOARD (shown after login) -->
     <div id="admin-dashboard" style="display:none">
+
+        <!-- Top bar -->
         <div class="admin-bar">
             <span class="logo" style="font-size:1.2rem">Dhannie's Admin</span>
             <div style="display:flex;align-items:center;gap:14px">
+                <!-- DB connection status pill -->
                 <div class="db-status-pill" id="db-status-pill">
                     <span class="db-dot" id="db-dot"></span>
                     <span id="db-status-text">Connecting...</span>
                 </div>
-                <button class="btn-outline" onclick="adminLogout()" style="padding:8px 20px">Logout</button>
+                <button class="btn-outline" onclick="adminLogout()"
+                        style="padding:8px 20px">Logout</button>
             </div>
         </div>
 
         <div class="admin-content">
+
+            <!-- Stats -->
             <div class="admin-stats" id="admin-stats"></div>
 
-            <!-- WhatsApp Number -->
+            <!-- WhatsApp number config -->
             <div class="wa-config-card">
-                <i class="fab fa-whatsapp" style="color:#25D366;margin-right:8px"></i>
-                <strong>WhatsApp Business Number</strong>
-                <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap">
-                    <input type="tel" id="wa-number-input" placeholder="+2348012345678" style="width:250px">
-                    <button class="btn-primary" onclick="saveWaNumber()" style="padding:10px 24px">Save</button>
+                <p style="font-weight:600;margin-bottom:12px">
+                    <i class="fab fa-whatsapp" style="color:#25D366;margin-right:6px"></i>
+                    WhatsApp Business Number
+                </p>
+                <div style="display:flex;gap:12px;flex-wrap:wrap">
+                    <input type="tel" id="wa-number-input" placeholder="+2348012345678"
+                           style="width:250px">
+                    <button class="btn-primary" onclick="saveWaNumber()"
+                            style="padding:10px 24px">Save</button>
                 </div>
+                <p style="font-size:.72rem;color:var(--gray-mid);margin-top:8px">
+                    Customers click "Order on WhatsApp" → directed to this number with product details pre-filled.
+                </p>
             </div>
 
-            <!-- Products -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
-                <h3 style="font-weight:600">Products
-                    <span id="sync-spinner" style="display:none;font-size:0.75rem;color:var(--gray-mid);margin-left:10px">
+            <!-- Products table -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:12px">
+                <h3 style="font-weight:600">
+                    Products
+                    <span id="sync-spinner"
+                          style="display:none;font-size:.75rem;color:var(--gray-mid);margin-left:10px">
                         <i class="fas fa-spinner fa-spin"></i> Syncing...
                     </span>
                 </h3>
                 <div style="display:flex;gap:10px">
-                    <button class="btn-outline" onclick="fetchProducts()" style="padding:10px 18px;font-size:0.82rem">
+                    <button class="btn-outline" onclick="fetchProducts()"
+                            style="padding:10px 18px;font-size:.82rem">
                         <i class="fas fa-sync-alt"></i> Refresh
                     </button>
-                    <button class="btn-primary" onclick="openForm()">+ Add Product</button>
+                    <button class="btn-primary" onclick="openForm()">
+                        + Add Product
+                    </button>
                 </div>
             </div>
+
             <div class="admin-table-wrap">
                 <table>
                     <thead>
                         <tr>
-                            <th>Image</th><th>Name</th><th>Price</th><th>Stock</th>
-                            <th>Storage</th><th>Actions</th>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Storage</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="admin-tbody"></tbody>
                 </table>
             </div>
+
         </div>
     </div>
 </div>
 
 <!-- ============================================================
-     WISHLIST DRAWER
+     WISHLIST DRAWER (slides in from right)
      ============================================================ -->
 <div id="wish-drawer">
     <div class="drawer-hdr">
         <h2 class="drawer-title"><i class="far fa-heart"></i> Wishlist</h2>
-        <button class="icon-btn" onclick="closeWishDrawer()"><i class="fas fa-times"></i></button>
+        <button class="icon-btn" onclick="closeWishDrawer()">
+            <i class="fas fa-times"></i>
+        </button>
     </div>
     <div class="drawer-body" id="wish-body"></div>
 </div>
@@ -334,20 +444,25 @@
 <!-- ============================================================
      QUICK VIEW MODAL
      ============================================================ -->
-<div id="modal-overlay" onclick="if(event.target===this)closeQV()">
+<div id="modal-overlay" onclick="if(event.target===this) closeQV()">
     <div id="qv-modal">
         <div class="modal-hdr">
             <h2 id="m-name" style="font-weight:600"></h2>
-            <button class="icon-btn" onclick="closeQV()"><i class="fas fa-times"></i></button>
+            <button class="icon-btn" onclick="closeQV()">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
         <div class="modal-body">
-            <img class="modal-img" id="m-img" style="display:none">
+            <img class="modal-img" id="m-img" style="display:none" alt="">
             <div id="m-placeholder" class="modal-placeholder"></div>
             <p class="card-price" id="m-price" style="font-size:1.3rem;margin-bottom:6px"></p>
             <div class="vibe-box" id="m-vibe"></div>
-            <p class="notes-label">TOP NOTES</p><div class="notes-row" id="m-top"></div>
-            <p class="notes-label">HEART NOTES</p><div class="notes-row" id="m-heart"></div>
-            <p class="notes-label">BASE NOTES</p><div class="notes-row" id="m-base"></div>
+            <p class="notes-label">TOP NOTES</p>
+            <div class="notes-row" id="m-top"></div>
+            <p class="notes-label">HEART NOTES</p>
+            <div class="notes-row" id="m-heart"></div>
+            <p class="notes-label">BASE NOTES</p>
+            <div class="notes-row" id="m-base"></div>
             <div class="size-opts" id="m-sizes"></div>
             <div id="m-actions" class="modal-actions"></div>
         </div>
@@ -355,17 +470,20 @@
 </div>
 
 <!-- ============================================================
-     WHATSAPP ORDER MODAL
+     WHATSAPP ORDER CONFIRM MODAL
      ============================================================ -->
-<div id="wa-overlay" onclick="if(event.target===this)closeWaModal()">
+<div id="wa-overlay" onclick="if(event.target===this) closeWaModal()">
     <div id="wa-modal">
         <div style="font-size:2.5rem;margin-bottom:12px">💬</div>
         <h3 style="font-weight:600;margin-bottom:10px">Order via WhatsApp</h3>
-        <p style="color:var(--gray-mid);font-size:0.85rem;margin-bottom:20px;line-height:1.6">We'll open WhatsApp with your order pre-filled. Our team will confirm and arrange delivery.</p>
+        <p style="color:var(--gray-mid);font-size:.85rem;margin-bottom:20px;line-height:1.65">
+            We'll open WhatsApp with your order pre-filled. Our team will confirm and arrange delivery.
+        </p>
         <div class="wa-product-preview" id="wa-preview"></div>
         <div style="display:flex;gap:10px">
             <button class="btn-outline" onclick="closeWaModal()" style="flex:1">Cancel</button>
-            <a class="btn-wa" id="wa-confirm-btn" href="#" target="_blank" onclick="closeWaModal()" style="flex:1;justify-content:center">
+            <a class="btn-wa" id="wa-confirm-btn" href="#" target="_blank" rel="noopener"
+               onclick="closeWaModal()" style="flex:1;justify-content:center">
                 <i class="fab fa-whatsapp"></i> Open WhatsApp
             </a>
         </div>
@@ -373,14 +491,24 @@
 </div>
 
 <!-- ============================================================
-     BOTTOM NAV
+     BOTTOM NAV (mobile only)
      ============================================================ -->
 <nav id="bottom-nav">
-    <button class="nav-item active" id="nav-home" onclick="showPage('home')"><i class="fas fa-home"></i><span>Home</span></button>
-    <button class="nav-item" id="nav-shop" onclick="showPage('shop')"><i class="fas fa-shopping-bag"></i><span>Shop</span></button>
-    <button class="nav-item" id="nav-about" onclick="showPage('about')"><i class="fas fa-info-circle"></i><span>About</span></button>
-    <button class="nav-item" id="nav-contact" onclick="showPage('contact')"><i class="fas fa-phone"></i><span>Contact</span></button>
-    <button class="nav-item" id="nav-wish" onclick="openWishDrawer()"><i class="far fa-heart"></i><span>Saved</span></button>
+    <button class="nav-item active" id="nav-home"    onclick="showPage('home')">
+        <i class="fas fa-home"></i><span>Home</span>
+    </button>
+    <button class="nav-item"        id="nav-shop"    onclick="showPage('shop')">
+        <i class="fas fa-shopping-bag"></i><span>Shop</span>
+    </button>
+    <button class="nav-item"        id="nav-about"   onclick="showPage('about')">
+        <i class="fas fa-info-circle"></i><span>About</span>
+    </button>
+    <button class="nav-item"        id="nav-contact" onclick="showPage('contact')">
+        <i class="fas fa-phone"></i><span>Contact</span>
+    </button>
+    <button class="nav-item"        id="nav-wish"    onclick="openWishDrawer()">
+        <i class="far fa-heart"></i><span>Saved</span>
+    </button>
 </nav>
 
 <!-- ============================================================
@@ -388,16 +516,33 @@
      ============================================================ -->
 <footer>
     <div class="footer-social-row">
-        <a id="footer-wa-btn" href="#" target="_blank"><i class="fab fa-whatsapp"></i></a>
-        <a href="https://instagram.com" target="_blank"><i class="fab fa-instagram"></i></a>
-        <a href="https://tiktok.com" target="_blank"><i class="fab fa-tiktok"></i></a>
-        <a href="https://facebook.com" target="_blank"><i class="fab fa-facebook"></i></a>
-        <a href="tel:+2349138072441"><i class="fas fa-phone"></i></a>
+        <a id="footer-wa-btn" href="#" target="_blank" rel="noopener" title="WhatsApp">
+            <i class="fab fa-whatsapp"></i>
+        </a>
+        <a href="https://instagram.com/dhannies_fragrance" target="_blank" rel="noopener" title="Instagram">
+            <i class="fab fa-instagram"></i>
+        </a>
+        <a href="https://tiktok.com/@dhannies_fragrance" target="_blank" rel="noopener" title="TikTok">
+            <i class="fab fa-tiktok"></i>
+        </a>
+        <a href="https://facebook.com/dhannies.fragrance" target="_blank" rel="noopener" title="Facebook">
+            <i class="fab fa-facebook"></i>
+        </a>
+        <a href="tel:+2349138072441" title="Call us">
+            <i class="fas fa-phone"></i>
+        </a>
     </div>
     <p style="margin-bottom:6px">© 2026 Dhannie's Fragrance. All rights reserved.</p>
-    <p>Developed by <a href="https://www.instagram.com/yousuf_xxo/" target="_blank" style="color:var(--gold)">xxo</a></p>
+    <p>Developed by
+        <a href="https://www.instagram.com/yousuf_xxo/" target="_blank"
+           style="color:var(--gold)">xxo</a>
+    </p>
 </footer>
 
+<!--
+  script.js must load AFTER the Supabase CDN script above.
+  It uses window.supabase.createClient() — no import needed.
+-->
 <script src="script.js"></script>
 </body>
 </html>
