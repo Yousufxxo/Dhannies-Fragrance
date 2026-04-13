@@ -806,9 +806,16 @@ select option {
 
 /* ── Quiz ───────────────────────────────────────────────────────── */
 .quiz-section {
-  background: var(--dark-gray);
+  /* background: var(--dark-gray); */
   text-align: center;
   padding: 80px 5%;
+}
+.quiz-section {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.3) 100%), 
+                url('img/Gemini_Generated_Image_i48ckoi48ckoi48c.png') center/cover no-repeat;
+    padding: 60px 20px;
+    border-radius: 12px;
+    margin-top: 60px;
 }
 .quiz-q {
   font-size: 0.95rem;
