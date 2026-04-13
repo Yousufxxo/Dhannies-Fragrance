@@ -9,11 +9,7 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="icon" type="image/png" href="img/LOADER.PNG" />
 
-    <!--
-      IMPORTANT: This CDN script MUST come before script.js.
-      It exposes window.supabase = { createClient, ... } as a global.
-      script.js calls window.supabase.createClient() directly — no ES module imports needed.
-    -->
+  
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -29,7 +25,9 @@
      ============================================================ -->
 <div id="loader">
     <div class="loader-inner">
-        <div class="loader-logo">Dhannie's<span>✦</span></div>
+        <div class="loader-logo">
+            <img src="img/LOADER.PNG" alt="Dhannie's Fragrance" style="max-width:180px; width:100%; height:auto; object-fit:contain; display:block; margin:0 auto;">
+        </div>
         <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
         <p class="loader-text" id="loader-text">Connecting to database...</p>
     </div>
@@ -92,7 +90,7 @@
              alt="Luxury perfume" loading="lazy">
         <div class="hero-content">
             <h1>Wear Your Signature</h1>
-            <p>Discover luxury fragrances crafted for those who appreciate the finer things.</p>
+            <p>Welcome to Dhannie's fragrance collection Discover luxury fragrances crafted for those who appreciate the finer things.</p>
             <div class="hero-actions">
                 <button class="btn-primary" onclick="showPage('shop')">Shop Now</button>
                 <a class="btn-wa" id="hero-wa-btn" href="#" target="_blank" rel="noopener">
@@ -225,7 +223,7 @@
             <div class="about-card">
                 <i class="fas fa-shipping-fast"></i>
                 <h3>Nationwide Delivery</h3>
-                <p>We ship to all 36 states in Nigeria. Same-day delivery in Abuja FCT. Order on WhatsApp for the fastest service.</p>
+                <p>We ship to all 36 states in Nigeria. Same-day delivery in Jos and Gombe. Order on WhatsApp for the fastest service.</p>
             </div>
         </div>
 
