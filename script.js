@@ -1240,8 +1240,8 @@ function animateLoader() {
   const steps = [
     { pct: 25,  msg: 'Connecting to database...' },
     { pct: 55,  msg: 'Loading fragrances...' },
-    { pct: 80,  msg: 'Almost ready...' },
-    { pct: 80, msg: "Welcome to Dhannie's fragrance collection" },
+    { pct: 50,  msg: 'Almost ready...' },
+    { pct: 50, msg: "Welcome to Dhannie's fragrance collection" },
   ];
   let i = 0;
   const next = () => {
