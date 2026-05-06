@@ -1240,8 +1240,8 @@ function animateLoader() {
   const steps = [
     { pct: 25,  msg: 'Connecting to database...' },
     { pct: 55,  msg: 'Loading fragrances...' },
-    { pct: 50,  msg: 'Almost ready...' },
-    { pct: 50, msg: "Welcome to Dhannie's fragrance collection" },
+    { pct: 80,  msg: 'Almost ready...' },
+    { pct: 100, msg: "Welcome to Dhannie's fragrance collection" },
   ];
   let i = 0;
   const next = () => {
@@ -1259,7 +1259,7 @@ function hideLoader() {
   if (!loader) return;
   loader.style.opacity    = '0';
   loader.style.transition = 'opacity .5s ease';
-  setTimeout(() => { loader.style.display = 'none'; }, 500);
+  setTimeout(() => { loader.style.display = 'none'; }, 300);
 }
 
 /* ================================================================
