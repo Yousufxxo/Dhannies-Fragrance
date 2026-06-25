@@ -7,9 +7,16 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 let supabaseClient = null;
 
-function initSupabase() {
+/** Wait for the CDN global to be available, then init (handles slow CDN loads) */
+async function initSupabase() {
+  // Poll for window.supabase up to 5 seconds
+  for (let i = 0; i < 50; i++) {
+    if (window.supabase) break;
+    await new Promise(r => setTimeout(r, 100));
+  }
+
   try {
-    // `supabase` is the CDN global — window.supabase
+    if (!window.supabase) throw new Error('Supabase CDN not loaded');
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     console.log('✅ Supabase connected');
     updateDbStatusUI(true);
@@ -79,25 +86,44 @@ const DEMO_PRODUCTS = [
    ================================================================ */
 
 let products = [];
+let productsReady = false; // guard against rendering before fetch completes
 
-/** Pull products from Supabase, fall back to localStorage / demo data */
-async function fetchProducts() {
+/** Pull products from Supabase with timeout + retry, fall back to localStorage / demo data */
+async function fetchProducts({ retries = 3, timeoutMs = 8000 } = {}) {
   showSyncSpinner(true);
 
   if (supabaseClient) {
-    try {
-      const { data, error } = await supabaseClient
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+    let lastErr;
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        // Race the Supabase query against a timeout
+        const fetchPromise = supabaseClient
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Supabase fetch timed out')), timeoutMs)
+        );
 
-      products = (data || []).map(dbRowToProduct);
-      // Cache locally for offline use
-      localStorage.setItem('dhannies_products', JSON.stringify(products));
-    } catch (err) {
-      console.error('Supabase fetch error:', err);
+        const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+
+        if (error) throw error;
+
+        products = (data || []).map(dbRowToProduct);
+        // Cache locally for offline use
+        localStorage.setItem('dhannies_products', JSON.stringify(products));
+        lastErr = null;
+        break; // success — exit retry loop
+      } catch (err) {
+        lastErr = err;
+        console.warn(`Supabase fetch attempt ${attempt}/${retries} failed:`, err.message);
+        if (attempt < retries) await new Promise(r => setTimeout(r, 1000 * attempt)); // backoff
+      }
+    }
+
+    if (lastErr) {
+      console.error('All Supabase fetch attempts failed, using local data');
       showToast('Using local data');
       products = loadLocalProducts();
     }
@@ -105,6 +131,7 @@ async function fetchProducts() {
     products = loadLocalProducts();
   }
 
+  productsReady = true;
   showSyncSpinner(false);
   renderAll();
   if (loggedIn) { renderAdminStats(); renderAdminTable(); }
@@ -426,17 +453,6 @@ function updatePrice(v) {
   renderAll();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('[data-f]').forEach(btn =>
-    btn.addEventListener('click', function () {
-      document.querySelectorAll(`[data-f="${this.dataset.f}"]`).forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      filters[this.dataset.f] = this.dataset.v;
-      renderAll();
-    })
-  );
-});
-
 /* ================================================================
    8. SEARCH + AUTOCOMPLETE
    ================================================================ */
@@ -603,6 +619,7 @@ function showMoreProducts(containerId) {
 }
 
 function renderAll() {
+  if (!productsReady) return; // don't render empty state before fetch completes
   // Reset home grid to 6 on filter change
   gridState['home-grid'] = 6;
   renderGrid('home-grid', 'home-skeleton');
@@ -1270,8 +1287,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Animate loading bar
   animateLoader();
 
-  // Connect Supabase (hardcoded credentials)
-  initSupabase();
+  // Connect Supabase — awaited so CDN is confirmed ready before fetchProducts
+  await initSupabase();
 
   // Check if admin is already signed in
   await checkExistingSession();
